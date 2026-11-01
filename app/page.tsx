@@ -13,15 +13,31 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <main>
-      {/* Four Different Hero Slides */}
-      <HeroSlider />
+    <main className="min-h-screen overflow-hidden bg-base-100">
+      {/* Hero Banner */}
+      <section aria-label="Featured books">
+        <HeroSlider />
+      </section>
 
-      {/* Latest Six Books from MongoDB */}
-      <NewArrivals />
+      {/* Latest Books */}
+      <section
+        aria-label="Latest book arrivals"
+        className="relative py-8 sm:py-12"
+      >
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <NewArrivals />
+        </div>
+      </section>
 
-      {/* Two Additional Static Sections */}
-      <HomeSections />
+      {/* Additional Library Sections */}
+      <section
+        aria-label="Explore the library"
+        className="relative border-t border-base-200 bg-base-200/30 py-8 sm:py-12"
+      >
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <HomeSections />
+        </div>
+      </section>
     </main>
   );
 }
