@@ -219,9 +219,8 @@ export default function Footer() {
         {/* Bottom Footer */}
         <div className="flex flex-col items-center justify-between gap-5 text-center sm:flex-row sm:text-left">
           <p className="text-xs leading-6 text-white/40">
-            © {new Date().getFullYear()} BookNook.
-            All rights reserved.
-          </p>
+  © 2026 BookNook. All rights reserved.
+</p>
 
           <p className="flex items-center gap-2 text-xs text-white/50">
             Crafted with
