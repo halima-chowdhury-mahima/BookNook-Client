@@ -28,7 +28,7 @@ interface BookData {
 }
 
 const categories = [
-   "Fiction",
+  "Fiction",
   "Non-Fiction",
   "Science",
   "Technology",
