@@ -1,4 +1,3 @@
-
 import type { Metadata } from "next";
 
 import HeroSlider from "./components/home/HeroSlider";
@@ -13,31 +12,59 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen overflow-hidden bg-base-100">
-      {/* Hero Banner */}
-      <section aria-label="Featured books">
+    <main className="relative min-h-screen overflow-hidden bg-[#f8f6ef]">
+      {/* Hero Section */}
+      <section
+        aria-label="Featured books"
+        className="relative isolate"
+      >
         <HeroSlider />
       </section>
 
-      {/* Latest Books */}
+      {/* Decorative Transition */}
+      <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-center gap-4 px-6 py-5 sm:py-7">
+        <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#d8c69f]" />
+        <span className="font-serif text-xs italic tracking-[0.2em] text-[#a88a53] sm:text-sm">
+          Discover · Read · Belong
+        </span>
+        <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#d8c69f]" />
+      </div>
+
+      {/* Latest Arrivals */}
       <section
         aria-label="Latest book arrivals"
-        className="relative py-8 sm:py-12"
+        className="relative isolate overflow-hidden bg-[#f8f6ef] py-10 sm:py-14 lg:py-16"
       >
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Background Decoration */}
+        <div className="pointer-events-none absolute -right-32 top-20 h-80 w-80 rounded-full bg-[#d9c59b]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -left-32 bottom-0 h-72 w-72 rounded-full bg-[#173f35]/5 blur-3xl" />
+
+        <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <NewArrivals />
         </div>
       </section>
 
-      {/* Additional Library Sections */}
+      {/* Editorial Divider */}
+      <div className="relative z-10 bg-[#f8f6ef] px-4">
+        <div className="mx-auto max-w-7xl border-t border-[#e5dece]" />
+      </div>
+
+      {/* Explore Library */}
       <section
         aria-label="Explore the library"
-        className="relative border-t border-base-200 bg-base-200/30 py-8 sm:py-12"
+        className="relative isolate overflow-hidden bg-[#f2f0e8] py-12 sm:py-16 lg:py-20"
       >
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Soft Background Accents */}
+        <div className="pointer-events-none absolute -left-36 top-10 h-80 w-80 rounded-full bg-[#d9c59b]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-32 bottom-0 h-72 w-72 rounded-full bg-[#173f35]/5 blur-3xl" />
+
+        <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <HomeSections />
         </div>
       </section>
+
+      {/* Closing Brand Accent */}
+      <div className="h-1 w-full bg-gradient-to-r from-[#173f35] via-[#c5a56b] to-[#173f35]" />
     </main>
   );
 }
