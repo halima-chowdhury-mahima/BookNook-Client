@@ -51,7 +51,6 @@ function AllBooksContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Category is controlled directly by the URL.
   const category = searchParams.get("category") || "All";
 
   const [books, setBooks] = useState<Book[]>([]);
@@ -59,34 +58,34 @@ function AllBooksContent() {
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
-
   const [availability, setAvailability] =
     useState<AvailabilityFilter>("All");
-
   const [sort, setSort] = useState<SortOption>("newest");
 
   // Load books automatically.
   useEffect(() => {
     const controller = new AbortController();
 
-    fetch(`${API_URL}/books`, {
-      signal: controller.signal,
-      cache: "no-store",
-    })
-      .then(async (response) => {
+    async function loadBooks() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(`${API_URL}/books`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
         if (!response.ok) {
           throw new Error("Unable to load books.");
         }
 
-        return (await response.json()) as BooksResponse;
-      })
-      .then((result) => {
+        const result: BooksResponse = await response.json();
+
         if (!controller.signal.aborted) {
           setBooks(extractBooks(result));
-          setError("");
         }
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         if (controller.signal.aborted) return;
 
         setError(
@@ -94,16 +93,16 @@ function AllBooksContent() {
             ? err.message
             : "Something went wrong."
         );
-      })
-      .finally(() => {
+      } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
         }
-      });
+      }
+    }
 
-    return () => {
-      controller.abort();
-    };
+    loadBooks();
+
+    return () => controller.abort();
   }, []);
 
   // Refresh books manually.
@@ -121,9 +120,8 @@ function AllBooksContent() {
       }
 
       const result: BooksResponse = await response.json();
-
       setBooks(extractBooks(result));
-    } catch (err) {
+    } catch (err: unknown) {
       setError(
         err instanceof Error
           ? err.message
@@ -200,7 +198,7 @@ function AllBooksContent() {
     });
   }, [books, search, category, availability, sort]);
 
-  // Update category in the URL.
+  // Update category in URL.
   function handleCategoryChange(value: string) {
     if (value === "All") {
       router.push("/all-books");
@@ -247,7 +245,7 @@ function AllBooksContent() {
           <div className="mt-7 flex justify-center">
             <Link
               href="/add-book"
-              className="rounded-full bg-[#173f35] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#245747]"
+              className="rounded-full bg-[#173f35] px-7 py-3 text-sm font-semibold !text-white transition hover:bg-[#245747]"
             >
               + Add a Book
             </Link>
@@ -405,7 +403,7 @@ function AllBooksContent() {
 
             <button
               onClick={fetchBooks}
-              className="mt-5 rounded-full bg-[#173f35] px-6 py-3 text-sm text-white"
+              className="mt-5 rounded-full bg-[#173f35] px-6 py-3 text-sm font-semibold !text-white transition hover:bg-[#245747]"
             >
               Try Again
             </button>
@@ -427,7 +425,7 @@ function AllBooksContent() {
 
             <button
               onClick={clearFilters}
-              className="mt-6 rounded-full bg-[#173f35] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245747]"
+              className="mt-6 rounded-full bg-[#173f35] px-6 py-3 text-sm font-semibold !text-white transition hover:bg-[#245747]"
             >
               Clear All Filters
             </button>
@@ -496,7 +494,7 @@ function AllBooksContent() {
 
                   <Link
                     href={`/books/${book._id}`}
-                    className="flex items-center justify-between rounded-xl bg-[#173f35] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#245747]"
+                    className="flex items-center justify-between rounded-xl bg-[#173f35] px-5 py-3 text-sm font-semibold !text-white transition hover:bg-[#245747]"
                   >
                     View Details
                     <ArrowRight size={17} />
