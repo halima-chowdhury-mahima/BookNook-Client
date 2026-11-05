@@ -28,7 +28,7 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden bg-[#102f28] text-white">
+    <footer className="relative overflow-hidden bg-[#102f28] text-white dark:bg-[#0b1712]">
 
       {/* Decorative Background */}
       <div className="pointer-events-none absolute -right-32 -top-32 size-96 rounded-full border border-[#d6b36c]/10" />
@@ -43,6 +43,7 @@ export default function Footer() {
           <div>
             <div className="mb-4 flex items-center gap-2">
               <Sparkles size={14} className="text-[#d6b36c]" />
+
               <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#d6b36c]">
                 A World Between Pages
               </span>
@@ -61,11 +62,13 @@ export default function Footer() {
             className="group inline-flex w-fit items-center gap-3 rounded-full border border-[#d6b36c]/50 bg-[#d6b36c]/10 px-6 py-3.5 text-sm font-semibold text-[#f0d9a1] transition-all duration-300 hover:-translate-y-1 hover:border-[#d6b36c] hover:bg-[#d6b36c] hover:text-[#173f35] hover:shadow-[0_8px_25px_rgba(214,179,108,0.15)]"
           >
             Explore Collection
+
             <ArrowUpRight
               size={17}
               className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
             />
           </Link>
+
         </div>
 
         {/* Main Footer Grid */}
@@ -85,6 +88,7 @@ export default function Footer() {
                 <span className="block font-serif text-3xl font-bold tracking-wide text-white">
                   BookNook
                 </span>
+
                 <span className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#d6b36c]">
                   Your Literary Escape
                 </span>
@@ -135,6 +139,7 @@ export default function Footer() {
           <div>
             <div className="mb-7 flex items-center gap-3">
               <BookMarked size={17} className="text-[#d6b36c]" />
+
               <h3 className="font-serif text-xl font-bold text-[#f0d9a1]">
                 Explore
               </h3>
@@ -148,7 +153,9 @@ export default function Footer() {
                     className="group/link inline-flex items-center gap-2 text-sm text-white/55 transition-all duration-300 hover:translate-x-1.5 hover:text-[#e3c783]"
                   >
                     <span className="h-px w-0 bg-[#d6b36c] transition-all duration-300 group-hover/link:w-4" />
+
                     {link.name}
+
                     <ArrowUpRight
                       size={13}
                       className="opacity-0 transition-opacity duration-300 group-hover/link:opacity-100"
@@ -163,6 +170,7 @@ export default function Footer() {
           <div>
             <div className="mb-7 flex items-center gap-3">
               <Mail size={17} className="text-[#d6b36c]" />
+
               <h3 className="font-serif text-xl font-bold text-[#f0d9a1]">
                 Get in Touch
               </h3>
@@ -183,6 +191,7 @@ export default function Footer() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40">
                     Email Us
                   </p>
+
                   <p className="mt-1 text-sm text-white/75 transition-colors group-hover/contact:text-[#e3c783]">
                     hello@booknook.com
                   </p>
@@ -199,6 +208,7 @@ export default function Footer() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40">
                     Our Location
                   </p>
+
                   <p className="mt-1 text-sm text-white/75">
                     Online Library
                   </p>
@@ -212,22 +222,27 @@ export default function Footer() {
         {/* Gold Divider */}
         <div className="my-12 flex items-center gap-4">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#d6b36c]/40 to-[#d6b36c]/10" />
+
           <BookOpen size={17} className="text-[#d6b36c]" />
+
           <div className="h-px flex-1 bg-gradient-to-l from-transparent via-[#d6b36c]/40 to-[#d6b36c]/10" />
         </div>
 
         {/* Bottom Footer */}
         <div className="flex flex-col items-center justify-between gap-5 text-center sm:flex-row sm:text-left">
+
           <p className="text-xs leading-6 text-white/40">
-  © 2026 BookNook. All rights reserved.
-</p>
+            © 2026 BookNook. All rights reserved.
+          </p>
 
           <p className="flex items-center gap-2 text-xs text-white/50">
             Crafted with
+
             <Heart
               size={13}
               className="fill-[#d6b36c] text-[#d6b36c]"
             />
+
             for every book lover.
           </p>
 
@@ -237,6 +252,7 @@ export default function Footer() {
           >
             Back to Top ↑
           </Link>
+
         </div>
       </div>
     </footer>

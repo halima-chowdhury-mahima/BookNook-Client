@@ -1,5 +1,4 @@
 
-
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -7,20 +6,25 @@
 @custom-variant dark (&:is(.dark *));
 
 @plugin "daisyui" {
-  themes: light --default;
+  themes: light --default, dark;
 }
 
+/* =====================================
+   LIGHT THEME
+===================================== */
+
 :root {
+  color-scheme: light;
+
   --primary: #173f35;
   --primary-foreground: #ffffff;
 
   --background: #f8f5ed;
   --foreground: #24352f;
 
-
   --font-sans: "DM Sans", sans-serif;
---font-serif: "Playfair Display", serif;
---font-heading: "Playfair Display", serif;
+  --font-serif: "Playfair Display", serif;
+  --font-heading: "Playfair Display", serif;
 
   --secondary: #eee9dd;
   --secondary-foreground: #173f35;
@@ -60,6 +64,60 @@
   --sidebar-border: #e7e1d5;
   --sidebar-ring: #a88a53;
 }
+
+/* =====================================
+   DARK THEME
+===================================== */
+
+.dark {
+  color-scheme: dark;
+
+  --primary: #d6b779;
+  --primary-foreground: #111d19;
+
+  --background: #111d19;
+  --foreground: #e8eee8;
+
+  --secondary: #243a32;
+  --secondary-foreground: #e8eee8;
+
+  --accent: #3b4b40;
+  --accent-foreground: #f0d9a1;
+
+  --muted: #1c2c25;
+  --muted-foreground: #a5b3a9;
+
+  --card: #1b2b24;
+  --card-foreground: #e8eee8;
+
+  --popover: #1b2b24;
+  --popover-foreground: #e8eee8;
+
+  --border: #34483d;
+  --input: #34483d;
+  --ring: #c5a56b;
+
+  --destructive: #f87171;
+
+  --chart-1: #d6b779;
+  --chart-2: #6caa8c;
+  --chart-3: #8ca7bd;
+  --chart-4: #c9a77c;
+  --chart-5: #a5b3a9;
+
+  --sidebar: #111d19;
+  --sidebar-foreground: #e8eee8;
+  --sidebar-primary: #d6b779;
+  --sidebar-primary-foreground: #111d19;
+  --sidebar-accent: #243a32;
+  --sidebar-accent-foreground: #e8eee8;
+  --sidebar-border: #34483d;
+  --sidebar-ring: #c5a56b;
+}
+
+/* =====================================
+   THEME CONFIGURATION
+===================================== */
 
 @theme inline {
   --color-background: var(--background);
@@ -116,7 +174,9 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Global Styles */
+/* =====================================
+   GLOBAL STYLES
+===================================== */
 
 * {
   box-sizing: border-box;
@@ -128,10 +188,13 @@ html {
 
 body {
   margin: 0;
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-sans);
   background: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 button,
@@ -149,12 +212,32 @@ button {
   cursor: pointer;
 }
 
+input,
+textarea,
+select {
+  background-color: var(--card);
+  color: var(--foreground);
+  border-color: var(--input);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
 ::selection {
   background: #173f35;
   color: #ffffff;
 }
 
-/* Layout */
+.dark ::selection {
+  background: #c5a56b;
+  color: #111d19;
+}
+
+/* =====================================
+   LAYOUT
+===================================== */
 
 .container-custom {
   width: min(100% - 40px, 1240px);
@@ -166,7 +249,7 @@ button {
 }
 
 .section-title {
-  font-family: "Playfair Display", serif;
+  font-family: var(--font-serif);
   font-size: clamp(2rem, 4vw, 3.4rem);
   font-weight: 600;
   line-height: 1.15;
@@ -179,7 +262,9 @@ button {
   font-size: 15px;
 }
 
-/* Buttons */
+/* =====================================
+   BUTTONS
+===================================== */
 
 .btn-primary-custom {
   display: inline-flex;
@@ -190,7 +275,7 @@ button {
   border: 1px solid var(--primary);
   border-radius: 5px;
   background: var(--primary);
-  color: white;
+  color: var(--primary-foreground);
   font-weight: 600;
   transition: all 0.3s ease;
 }
@@ -215,17 +300,23 @@ button {
 
 .btn-outline-custom:hover {
   background: var(--primary);
-  color: white;
+  color: var(--primary-foreground);
 }
 
-/* Book Cards */
+/* =====================================
+   BOOK CARDS
+===================================== */
 
 .book-card {
   overflow: hidden;
   background: var(--card);
+  color: var(--card-foreground);
   border: 1px solid var(--border);
   border-radius: 8px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    background-color 0.3s ease;
 }
 
 .book-card:hover {
@@ -233,10 +324,16 @@ button {
   box-shadow: 0 15px 35px rgba(23, 63, 53, 0.09);
 }
 
-/* Typography Utilities */
+.dark .book-card:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+}
+
+/* =====================================
+   TYPOGRAPHY UTILITIES
+===================================== */
 
 .text-serif {
-  font-family: "Playfair Display", serif;
+  font-family: var(--font-serif);
 }
 
 .text-primary-custom {
@@ -245,13 +342,17 @@ button {
 
 .bg-primary-custom {
   background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .bg-cream {
   background: var(--background);
+  color: var(--foreground);
 }
 
-/* Hero Slider */
+/* =====================================
+   HERO SLIDER
+===================================== */
 
 .hero-pagination {
   display: flex;
@@ -274,7 +375,9 @@ button {
   opacity: 1;
 }
 
-/* Responsive */
+/* =====================================
+   RESPONSIVE
+===================================== */
 
 @media (max-width: 768px) {
   .container-custom {

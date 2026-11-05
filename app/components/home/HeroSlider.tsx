@@ -108,7 +108,8 @@ export default function HeroSlider() {
   }, [api]);
 
   return (
-    <section className="relative overflow-hidden bg-[#173f35]">
+    <section className="relative overflow-hidden bg-[#173f35] dark:bg-[#0c1712] transition-colors duration-300">
+
       <Carousel
         setApi={setApi}
         opts={{
@@ -119,21 +120,30 @@ export default function HeroSlider() {
         className="w-full"
       >
         <CarouselContent className="ml-0">
+
           {slides.map((slide) => (
             <CarouselItem key={slide.id} className="basis-full pl-0">
+
               <div
                 className="relative flex min-h-[570px] items-center bg-cover bg-center md:min-h-[680px]"
                 style={{
                   backgroundImage: `url("${slide.image}")`,
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-[#102c25]/95 via-[#173f35]/75 to-[#173f35]/20" />
 
-                <div className="absolute inset-0 bg-black/10" />
+                {/* Premium Green Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#102c25]/95 via-[#173f35]/75 to-[#173f35]/20 dark:from-[#08140f]/95 dark:via-[#102b20]/85 dark:to-[#102b20]/35 transition-all duration-500" />
 
+                <div className="absolute inset-0 bg-black/10 dark:bg-black/20" />
+
+                {/* Content */}
                 <div className="container-custom relative z-10 w-full py-20">
+
                   <div className="max-w-3xl text-white">
+
+                    {/* Eyebrow */}
                     <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-5 py-2 backdrop-blur-sm">
+
                       <Sparkles
                         size={15}
                         className="text-[#d9b98b]"
@@ -142,32 +152,42 @@ export default function HeroSlider() {
                       <span className="text-[10px] font-semibold tracking-[0.25em] text-[#f0dfc0]">
                         {slide.eyebrow}
                       </span>
+
                     </div>
 
+                    {/* Heading */}
                     <h1 className="text-serif text-5xl font-semibold leading-[1.12] md:text-7xl lg:text-[82px]">
+
                       {slide.title}
+
                       <br />
 
                       <span className="text-[#e3c69d]">
                         {slide.highlight}
                       </span>
+
                     </h1>
 
+                    {/* Description */}
                     <p className="mt-7 max-w-xl text-sm leading-8 text-white/75 md:text-base">
                       {slide.description}
                     </p>
 
-                    {/* Working Button */}
+                    {/* CTA Button */}
                     <Link
                       href={slide.href}
-                      className="btn-primary-custom mt-9 !border-[#e3c69d] !bg-[#e3c69d] !px-7 !py-4 !text-[#173f35] hover:!border-white hover:!bg-white"
+                      className="btn-primary-custom mt-9 !border-[#e3c69d] !bg-[#e3c69d] !px-7 !py-4 !text-[#173f35] hover:!border-white hover:!bg-white transition-all duration-300"
                     >
                       <BookOpen size={18} />
+
                       {slide.button}
+
                       <ArrowRight size={17} />
                     </Link>
 
+                    {/* Slide Number */}
                     <div className="mt-14 flex items-center gap-4">
+
                       <span className="text-sm font-semibold text-[#e3c69d]">
                         {slide.number}
                       </span>
@@ -177,21 +197,32 @@ export default function HeroSlider() {
                       <span className="text-xs tracking-[0.2em] text-white/60">
                         04 — STORIES AWAIT
                       </span>
+
                     </div>
+
                   </div>
+
                 </div>
+
               </div>
+
             </CarouselItem>
           ))}
+
         </CarouselContent>
 
+        {/* Slider Controls */}
         <div className="absolute bottom-8 right-5 z-20 flex items-center gap-4 md:bottom-12 md:right-12">
+
+          {/* Pagination */}
           <div className="flex items-center gap-2">
+
             {slides.map((slide, index) => (
               <button
                 key={slide.id}
                 type="button"
                 aria-label={`Go to slide ${index + 1}`}
+                aria-current={activeSlide === index ? "true" : undefined}
                 onClick={() => api?.scrollTo(index)}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   activeSlide === index
@@ -200,15 +231,22 @@ export default function HeroSlider() {
                 }`}
               />
             ))}
+
           </div>
 
+          {/* Navigation */}
           <div className="flex gap-2">
+
             <CarouselPrevious className="static translate-y-0 h-11 w-11 rounded-full border border-white/40 bg-transparent text-white hover:border-[#e3c69d] hover:bg-[#e3c69d] hover:text-[#173f35] disabled:opacity-50" />
 
             <CarouselNext className="static translate-y-0 h-11 w-11 rounded-full border border-white/40 bg-transparent text-white hover:border-[#e3c69d] hover:bg-[#e3c69d] hover:text-[#173f35] disabled:opacity-50" />
+
           </div>
+
         </div>
+
       </Carousel>
+
     </section>
   );
 }

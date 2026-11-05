@@ -8,6 +8,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { Toaster } from "react-hot-toast";
 import { cn } from "./lib/utils";
+import Providers from "./providers";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -45,34 +46,37 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={cn(dmSans.variable, playfair.variable)}
     >
       <body className="font-sans">
-        <Navbar />
+        <Providers>
+          <Navbar />
 
-        {children}
+          {children}
 
-        <Footer />
+          <Footer />
 
-        <Toaster
-          position="top-right"
-          reverseOrder={false}
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: "#173f35",
-              color: "#ffffff",
-              borderRadius: "12px",
-              padding: "14px 18px",
-            },
-            success: {
-              iconTheme: {
-                primary: "#e9c98b",
-                secondary: "#173f35",
+          <Toaster
+            position="top-right"
+            reverseOrder={false}
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: "#173f35",
+                color: "#ffffff",
+                borderRadius: "12px",
+                padding: "14px 18px",
               },
-            },
-          }}
-        />
+              success: {
+                iconTheme: {
+                  primary: "#e9c98b",
+                  secondary: "#173f35",
+                },
+              },
+            }}
+          />
+        </Providers>
       </body>
     </html>
   );
