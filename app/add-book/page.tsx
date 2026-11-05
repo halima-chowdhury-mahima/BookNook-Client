@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookPlus, ImagePlus, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -45,6 +45,11 @@ const categories = [
 
 export default function AddBookPage() {
   const router = useRouter();
+
+
+  useEffect(() => {
+  document.title = "BookNook | Add Book";
+}, []);
 
   const [loading, setLoading] = useState(false);
 

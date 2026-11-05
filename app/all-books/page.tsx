@@ -51,6 +51,11 @@ function AllBooksContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+
+  useEffect(() => {
+  document.title = "BookNook | All Books";
+}, []);
+
   const category = searchParams.get("category") || "All";
 
   const [books, setBooks] = useState<Book[]>([]);

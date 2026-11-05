@@ -5,7 +5,7 @@ import NewArrivals from "./components/home/NewArrivals";
 import HomeSections from "./components/home/HomeSections";
 
 export const metadata: Metadata = {
-  title: "Home",
+  title: "BookNook | Home",
   description:
     "Discover wonderful stories, explore new books and enjoy borrowing at BookNook.",
 };

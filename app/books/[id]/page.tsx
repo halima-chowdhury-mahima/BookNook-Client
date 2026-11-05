@@ -43,6 +43,9 @@ function BookDetailsContent() {
   const router = useRouter();
 
   const bookId = params.id;
+  useEffect(() => {
+  document.title = "BookNook | Book Details";
+}, []);
 
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
