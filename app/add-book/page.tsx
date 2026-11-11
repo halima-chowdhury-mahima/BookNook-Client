@@ -21,9 +21,6 @@ import { apiRequest } from "../lib/api-client";
 
 const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
 const categories = [
   "Fiction",
   "Science",
@@ -33,9 +30,20 @@ const categories = [
 ];
 
 interface AddBookResponse {
-  success?: boolean;
+  success: boolean;
   message?: string;
   data?: unknown;
+}
+
+interface ImgBBResponse {
+  success: boolean;
+  data?: {
+    url?: string;
+    display_url?: string;
+  };
+  error?: {
+    message?: string;
+  };
 }
 
 export default function AddBookPage() {
@@ -45,7 +53,7 @@ export default function AddBookPage() {
   const user = session?.user ?? null;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewUrlRef = useRef<string>("");
+  const previewUrlRef = useRef("");
 
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
@@ -63,7 +71,6 @@ export default function AddBookPage() {
     document.title = "BookNook | Add Book";
   }, []);
 
-  // Clean up the preview URL when the component unmounts.
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) {
@@ -72,7 +79,10 @@ export default function AddBookPage() {
     };
   }, []);
 
-  // Handle image selection.
+  // ==========================================
+  // Handle Image Selection
+  // ==========================================
+
   function handleImageChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
@@ -80,8 +90,14 @@ export default function AddBookPage() {
 
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image.");
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please select a JPG, PNG, or WEBP image.");
       event.target.value = "";
       return;
     }
@@ -92,20 +108,22 @@ export default function AddBookPage() {
       return;
     }
 
-    // Remove the previous preview URL.
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
     }
 
-    const newPreviewUrl = URL.createObjectURL(file);
+    const previewUrl = URL.createObjectURL(file);
 
-    previewUrlRef.current = newPreviewUrl;
+    previewUrlRef.current = previewUrl;
 
     setImageFile(file);
-    setImagePreview(newPreviewUrl);
+    setImagePreview(previewUrl);
   }
 
-  // Remove selected image.
+  // ==========================================
+  // Remove Selected Image
+  // ==========================================
+
   function handleRemoveImage() {
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
@@ -120,15 +138,18 @@ export default function AddBookPage() {
     }
   }
 
-  // Upload image to ImgBB.
+  // ==========================================
+  // Upload Image to ImgBB
+  // ==========================================
+
   async function uploadImage(): Promise<string> {
     if (!imageFile) {
-      throw new Error("Please select a book image.");
+      throw new Error("Please select a book cover image.");
     }
 
     if (!IMGBB_API_KEY) {
       throw new Error(
-        "ImgBB API key is missing. Configure NEXT_PUBLIC_IMGBB_API_KEY."
+        "ImgBB API key is missing. Please check your environment variables."
       );
     }
 
@@ -136,6 +157,7 @@ export default function AddBookPage() {
 
     try {
       const formData = new FormData();
+
       formData.append("image", imageFile);
 
       const response = await fetch(
@@ -146,21 +168,34 @@ export default function AddBookPage() {
         }
       );
 
-      const result = await response.json();
+      const result =
+        (await response.json()) as ImgBBResponse;
 
-      if (!response.ok || !result.success || !result.data?.url) {
+      if (!response.ok || !result.success) {
         throw new Error(
           result.error?.message || "Image upload failed."
         );
       }
 
-      return result.data.url as string;
+      const imageUrl =
+        result.data?.display_url || result.data?.url;
+
+      if (!imageUrl) {
+        throw new Error(
+          "ImgBB did not return a valid image URL."
+        );
+      }
+
+      return imageUrl;
     } finally {
       setUploadingImage(false);
     }
   }
 
-  // Submit book information.
+  // ==========================================
+  // Submit Book Information
+  // ==========================================
+
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
   ) {
@@ -182,7 +217,7 @@ export default function AddBookPage() {
     }
 
     if (!imageFile) {
-      toast.error("Please upload a book image.");
+      toast.error("Please upload a book cover image.");
       return;
     }
 
@@ -200,14 +235,15 @@ export default function AddBookPage() {
         id: "add-book",
       });
 
-      // Step 1: Upload image.
+      // Step 1: Upload image to ImgBB.
       const uploadedImageUrl = await uploadImage();
 
       toast.loading("Saving book information...", {
         id: "add-book",
       });
 
-      // Step 2: Prepare book data.
+      // Step 2: Prepare book information.
+      // addedBy and availableCopies are handled by the backend.
       const payload = {
         title: title.trim(),
         author: author.trim(),
@@ -215,11 +251,9 @@ export default function AddBookPage() {
         description: description.trim(),
         image: uploadedImageUrl,
         totalCopies: copies,
-        availableCopies: copies,
-        addedBy: user.email || "",
       };
 
-      // Step 3: Save book in MongoDB through backend API.
+      // Step 3: Save book in MongoDB.
       const result = await apiRequest<AddBookResponse>(
         "/books",
         {
@@ -228,8 +262,14 @@ export default function AddBookPage() {
         }
       );
 
+      if (!result.success) {
+        throw new Error(
+          result.message || "Failed to add book."
+        );
+      }
+
       toast.success(
-        result?.message || "Book added successfully!",
+        result.message || "Book added successfully!",
         {
           id: "add-book",
         }
@@ -251,11 +291,19 @@ export default function AddBookPage() {
     }
   }
 
+  // ==========================================
+  // Reusable Styles
+  // ==========================================
+
   const inputClass =
     "w-full rounded-xl border border-[#e5e7df] bg-[#fcfbf8] px-4 py-3 text-sm text-[#173f35] outline-none transition placeholder:text-[#8b9b91] focus:border-[#173f35] focus:ring-2 focus:ring-[#173f35]/10 dark:border-[#34483d] dark:bg-[#15251e] dark:text-[#e8eee8] dark:placeholder:text-[#91a197]";
 
   const labelClass =
     "mb-2 block text-sm font-semibold text-[#173f35] dark:text-[#e8eee8]";
+
+  // ==========================================
+  // Authentication Loading
+  // ==========================================
 
   if (isPending) {
     return (
@@ -267,6 +315,10 @@ export default function AddBookPage() {
       </main>
     );
   }
+
+  // ==========================================
+  // Login Required
+  // ==========================================
 
   if (!user) {
     return (
@@ -296,10 +348,13 @@ export default function AddBookPage() {
     );
   }
 
+  // ==========================================
+  // Add Book Form
+  // ==========================================
+
   return (
     <main className="min-h-screen bg-[#f8f5ed] px-5 py-12 text-[#173f35] transition-colors dark:bg-[#111d19] dark:text-[#e8eee8] md:px-10">
       <div className="mx-auto max-w-4xl">
-
         <Link
           href="/all-books"
           className="mb-7 inline-flex items-center gap-2 text-sm font-semibold text-[#718078] transition hover:text-[#173f35] dark:text-[#a5b3a9] dark:hover:text-[#f0d9a1]"
@@ -338,7 +393,6 @@ export default function AddBookPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-
             <div>
               <label className={labelClass}>
                 Book Title *
@@ -347,7 +401,9 @@ export default function AddBookPage() {
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(event) =>
+                  setTitle(event.target.value)
+                }
                 placeholder="Enter book title"
                 maxLength={150}
                 required
@@ -363,7 +419,9 @@ export default function AddBookPage() {
               <input
                 type="text"
                 value={author}
-                onChange={(e) => setAuthor(e.target.value)}
+                onChange={(event) =>
+                  setAuthor(event.target.value)
+                }
                 placeholder="Enter author name"
                 maxLength={100}
                 required
@@ -378,11 +436,15 @@ export default function AddBookPage() {
 
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(event) =>
+                  setCategory(event.target.value)
+                }
                 required
                 className={inputClass}
               >
-                <option value="">Select a category</option>
+                <option value="">
+                  Select a category
+                </option>
 
                 {categories.map((item) => (
                   <option key={item} value={item}>
@@ -400,7 +462,9 @@ export default function AddBookPage() {
               <input
                 type="number"
                 value={totalCopies}
-                onChange={(e) => setTotalCopies(e.target.value)}
+                onChange={(event) =>
+                  setTotalCopies(event.target.value)
+                }
                 min={1}
                 step={1}
                 required
@@ -410,7 +474,7 @@ export default function AddBookPage() {
 
             <div>
               <label className={labelClass}>
-                Added By
+                User Name
               </label>
 
               <input
@@ -442,7 +506,9 @@ export default function AddBookPage() {
 
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(event) =>
+                setDescription(event.target.value)
+              }
               placeholder="Write a short description about the book..."
               rows={5}
               maxLength={3000}
@@ -535,7 +601,10 @@ export default function AddBookPage() {
             >
               {submitting || uploadingImage ? (
                 <>
-                  <Loader2 size={17} className="animate-spin" />
+                  <Loader2
+                    size={17}
+                    className="animate-spin"
+                  />
                   {uploadingImage
                     ? "Uploading Image..."
                     : "Adding Book..."}
