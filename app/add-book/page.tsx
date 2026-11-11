@@ -22,11 +22,22 @@ import { apiRequest } from "../lib/api-client";
 const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
 
 const categories = [
+
   "Fiction",
   "Science",
   "History",
   "Kids",
-  "Others",
+   "Self-Help",
+   "Finance",
+   "Technology",
+   "Education",
+   "Religion & Spirituality",
+   "Business & Economics",
+   "Psychology",
+    "Poetry",
+    "Cooking & Food",
+    "Young Adult",
+     "Others",
 ];
 
 interface AddBookResponse {
