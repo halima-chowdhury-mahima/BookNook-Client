@@ -84,22 +84,16 @@ export default function NewArrivals() {
 
   return (
     <section className="relative overflow-hidden bg-background py-16 text-foreground transition-colors duration-300 sm:py-20 lg:py-24">
-
       {/* Decorative Background */}
       <div className="pointer-events-none absolute -right-40 top-20 size-96 rounded-full border border-[#c6a45f]/10" />
-
       <div className="pointer-events-none absolute -right-24 top-36 size-64 rounded-full border border-[#c6a45f]/10" />
-
       <div className="pointer-events-none absolute -bottom-40 -left-40 size-96 rounded-full bg-[#c6a45f]/[0.04] blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
-
         {/* Section Heading */}
         <div className="mb-12 flex flex-col justify-between gap-7 md:mb-14 md:flex-row md:items-end">
-
           <div>
             <div className="mb-5 flex items-center gap-3">
-
               <span className="h-px w-8 bg-[#b28a50]" />
 
               <Sparkles
@@ -110,12 +104,13 @@ export default function NewArrivals() {
               <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#ad8b49] dark:text-[#d6b779]">
                 Fresh From The Shelves
               </span>
-
             </div>
 
             <h2 className="font-serif text-4xl font-bold tracking-tight text-primary sm:text-5xl lg:text-[56px]">
               New Arrivals
-              <span className="ml-2 text-[#b28a50] dark:text-[#d6b779]">.</span>
+              <span className="ml-2 text-[#b28a50] dark:text-[#d6b779]">
+                .
+              </span>
             </h2>
 
             <p className="mt-5 max-w-xl text-sm leading-8 text-muted-foreground sm:text-base">
@@ -136,30 +131,28 @@ export default function NewArrivals() {
               className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
             />
           </Link>
-
         </div>
 
         {/* Decorative Divider */}
         <div className="mb-10 flex items-center gap-4">
-
           <div className="h-px flex-1 bg-gradient-to-r from-[#c6a45f]/40 to-transparent" />
 
-          <BookOpen size={17} className="text-[#b28a50] dark:text-[#d6b779]" />
+          <BookOpen
+            size={17}
+            className="text-[#b28a50] dark:text-[#d6b779]"
+          />
 
           <div className="h-px flex-1 bg-gradient-to-l from-[#c6a45f]/40 to-transparent" />
-
         </div>
 
         {/* Loading State */}
         {loading && (
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
-
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={index}
                 className="animate-pulse overflow-hidden rounded-[22px] border border-border bg-card"
               >
-
                 <div className="aspect-[4/5] bg-muted" />
 
                 <div className="space-y-3 p-4 sm:p-5">
@@ -168,19 +161,19 @@ export default function NewArrivals() {
                   <div className="h-3 w-2/3 rounded bg-muted" />
                   <div className="mt-5 h-9 rounded-full bg-muted" />
                 </div>
-
               </div>
             ))}
-
           </div>
         )}
 
         {/* Error State */}
         {!loading && error && (
           <div className="rounded-[24px] border border-border bg-card px-6 py-16 text-center text-card-foreground shadow-sm">
-
             <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-[#c6a45f]/30 bg-secondary">
-              <BookOpen size={30} className="text-[#ad8b49] dark:text-[#d6b779]" />
+              <BookOpen
+                size={30}
+                className="text-[#ad8b49] dark:text-[#d6b779]"
+              />
             </div>
 
             <h3 className="mt-6 font-serif text-2xl font-bold text-primary">
@@ -198,16 +191,17 @@ export default function NewArrivals() {
               <RefreshCw size={15} />
               Try Again
             </button>
-
           </div>
         )}
 
         {/* Empty State */}
         {!loading && !error && books.length === 0 && (
           <div className="rounded-[24px] border border-border bg-card px-6 py-16 text-center text-card-foreground">
-
             <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-secondary">
-              <BookMarked size={30} className="text-[#ad8b49] dark:text-[#d6b779]" />
+              <BookMarked
+                size={30}
+                className="text-[#ad8b49] dark:text-[#d6b779]"
+              />
             </div>
 
             <h3 className="mt-6 font-serif text-2xl font-bold text-primary">
@@ -225,15 +219,13 @@ export default function NewArrivals() {
               Explore Library
               <ArrowRight size={15} />
             </Link>
-
           </div>
         )}
 
-        {/* Latest Eight Books */}
+        {/* Latest Six Books: 3 Columns x 2 Rows */}
         {!loading && !error && books.length > 0 && (
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
-
-            {books.map((book) => {
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+            {books.slice(0, 6).map((book) => {
               const isAvailable = book.availableCopies > 0;
 
               return (
@@ -241,26 +233,23 @@ export default function NewArrivals() {
                   key={book._id}
                   className="group/card relative flex h-full flex-col overflow-hidden rounded-[22px] border border-border bg-card text-card-foreground shadow-[0_8px_25px_rgba(23,63,53,0.05)] transition-all duration-500 hover:-translate-y-2 hover:border-[#c6a45f]/60 hover:shadow-[0_22px_45px_rgba(23,63,53,0.13)] dark:hover:shadow-[0_22px_45px_rgba(0,0,0,0.3)]"
                 >
-
                   {/* Book Cover */}
                   <Link
                     href={`/books/${book._id}`}
                     aria-label={`View ${book.title} details`}
                     className="relative block aspect-[4/5] overflow-hidden bg-gradient-to-br from-[#eee8d9] to-[#e1dacb] dark:from-[#293b30] dark:to-[#17271f]"
                   >
-
                     {book.image ? (
                       <Image
                         src={book.image}
                         alt={book.title}
                         fill
                         unoptimized
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover transition-transform duration-1000 ease-out group-hover/card:scale-110"
                       />
                     ) : (
                       <div className="flex h-full flex-col items-center justify-center gap-3">
-
                         <BookOpen
                           size={55}
                           strokeWidth={1}
@@ -270,7 +259,6 @@ export default function NewArrivals() {
                         <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#173f35]/45 dark:text-[#e8eee8]/50">
                           BookNook Library
                         </span>
-
                       </div>
                     )}
 
@@ -307,20 +295,16 @@ export default function NewArrivals() {
 
                       {isAvailable ? "Available" : "Out of Stock"}
                     </span>
-
                   </Link>
 
                   {/* Book Information */}
                   <div className="flex flex-1 flex-col p-4 sm:p-5">
-
                     <div className="mb-2 flex items-center gap-2">
-
                       <span className="h-px w-5 bg-[#c6a45f]" />
 
                       <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#ad8b49] dark:text-[#d6b779]">
                         Curated Collection
                       </span>
-
                     </div>
 
                     <h3 className="line-clamp-2 min-h-[44px] font-serif text-base font-bold leading-6 text-card-foreground transition-colors duration-300 group-hover/card:text-[#a17b35] dark:group-hover/card:text-[#e2c58c] sm:text-lg">
@@ -336,9 +320,7 @@ export default function NewArrivals() {
 
                     {/* Available Copies */}
                     <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-
                       <div>
-
                         <p className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
                           Available Copies
                         </p>
@@ -356,14 +338,12 @@ export default function NewArrivals() {
                             / {book.totalCopies}
                           </span>
                         </p>
-
                       </div>
 
                       <BookMarked
                         size={19}
                         className="text-[#c6a45f]/70 dark:text-[#d6b779]/80"
                       />
-
                     </div>
 
                     {/* Details Button */}
@@ -378,36 +358,30 @@ export default function NewArrivals() {
                         className="transition-transform duration-300 group-hover/details:translate-x-0.5 group-hover/details:-translate-y-0.5"
                       />
                     </Link>
-
                   </div>
 
                   {/* Gold Bottom Accent */}
                   <div className="h-[3px] w-0 bg-gradient-to-r from-[#ad8b49] via-[#f0d9a1] to-[#ad8b49] transition-all duration-700 group-hover/card:w-full" />
-
                 </article>
               );
             })}
-
           </div>
         )}
 
-        
-{/* See All Books */}
-<div className="mt-14 flex justify-center">
-  <Link
-    href="/all-books"
-    className="group inline-flex items-center gap-3 rounded-full border border-[#173f35] bg-[#173f35] px-8 py-4 text-xs font-bold uppercase tracking-[0.15em] !text-white shadow-[0_8px_20px_rgba(23,63,53,0.15)] transition-all duration-300 hover:-translate-y-1 hover:border-[#c6a45f] hover:bg-gradient-to-br hover:from-[#e3c783] hover:to-[#c6a45f] hover:!text-[#173f35] hover:shadow-[0_12px_28px_rgba(23,63,53,0.22)] dark:border-[#d6b779] dark:bg-[#d6b779] dark:!text-[#173f35] dark:hover:border-[#f0d9a1] dark:hover:bg-[#f0d9a1]"
-  >
-    Discover All Books
+        {/* See All Books */}
+        <div className="mt-14 flex justify-center">
+          <Link
+            href="/all-books"
+            className="group inline-flex items-center gap-3 rounded-full border border-[#173f35] bg-[#173f35] px-8 py-4 text-xs font-bold uppercase tracking-[0.15em] !text-white shadow-[0_8px_20px_rgba(23,63,53,0.15)] transition-all duration-300 hover:-translate-y-1 hover:border-[#c6a45f] hover:bg-gradient-to-br hover:from-[#e3c783] hover:to-[#c6a45f] hover:!text-[#173f35] hover:shadow-[0_12px_28px_rgba(23,63,53,0.22)] dark:border-[#d6b779] dark:bg-[#d6b779] dark:!text-[#173f35] dark:hover:border-[#f0d9a1] dark:hover:bg-[#f0d9a1]"
+          >
+            Discover All Books
 
-    <ArrowRight
-      size={16}
-      className="transition-transform duration-300 group-hover:translate-x-1"
-    />
-  </Link>
-</div>
-
-
+            <ArrowRight
+              size={16}
+              className="transition-transform duration-300 group-hover:translate-x-1"
+            />
+          </Link>
+        </div>
       </div>
     </section>
   );
