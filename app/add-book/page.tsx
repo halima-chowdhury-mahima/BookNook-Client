@@ -1,546 +1,555 @@
 
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-
+import Image from "next/image";
 import {
-  Search,
   BookOpen,
+  Upload,
   Loader2,
-  ArrowRight,
-  RefreshCw,
-  SlidersHorizontal,
+  ArrowLeft,
+  ImagePlus,
   X,
-  ArrowUpDown,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
-interface Book {
-  _id: string;
-  title: string;
-  author: string;
-  category: string;
-  description: string;
-  image: string;
-  totalCopies: number;
-  availableCopies: number;
-  addedBy: string;
-  createdAt?: string;
-}
+import { authClient } from "../lib/auth-client";
+import { apiRequest } from "../lib/api-client";
 
-interface BooksResponse {
-  success?: boolean;
-  data?: Book[];
-  books?: Book[];
-}
-
-type AvailabilityFilter = "All" | "Available" | "Unavailable";
-type SortOption = "newest" | "oldest" | "az" | "za";
+const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-function extractBooks(result: BooksResponse): Book[] {
-  if (Array.isArray(result.data)) return result.data;
-  if (Array.isArray(result.books)) return result.books;
-  return [];
+const categories = [
+  "Fiction",
+  "Science",
+  "History",
+  "Kids",
+  "Others",
+];
+
+interface AddBookResponse {
+  success?: boolean;
+  message?: string;
+  data?: unknown;
 }
 
-function AllBooksContent() {
-  const searchParams = useSearchParams();
+export default function AddBookPage() {
   const router = useRouter();
 
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user ?? null;
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string>("");
+
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+  const [totalCopies, setTotalCopies] = useState("1");
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
+
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
-    document.title = "BookNook | All Books";
+    document.title = "BookNook | Add Book";
   }, []);
 
-  const category = searchParams.get("category") || "All";
-
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const [search, setSearch] = useState("");
-  const [availability, setAvailability] =
-    useState<AvailabilityFilter>("All");
-  const [sort, setSort] = useState<SortOption>("newest");
-
-  // Load books automatically.
+  // Clean up the preview URL when the component unmounts.
   useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadBooks() {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await fetch(`${API_URL}/books`, {
-          signal: controller.signal,
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          throw new Error("Unable to load books.");
-        }
-
-        const result: BooksResponse = await response.json();
-
-        if (!controller.signal.aborted) {
-          setBooks(extractBooks(result));
-        }
-      } catch (err: unknown) {
-        if (controller.signal.aborted) return;
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Something went wrong."
-        );
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
       }
+    };
+  }, []);
+
+  // Handle image selection.
+  function handleImageChange(
+    event: ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image.");
+      event.target.value = "";
+      return;
     }
 
-    loadBooks();
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5 MB.");
+      event.target.value = "";
+      return;
+    }
 
-    return () => controller.abort();
-  }, []);
+    // Remove the previous preview URL.
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
 
-  // Refresh books manually.
-  async function fetchBooks() {
+    const newPreviewUrl = URL.createObjectURL(file);
+
+    previewUrlRef.current = newPreviewUrl;
+
+    setImageFile(file);
+    setImagePreview(newPreviewUrl);
+  }
+
+  // Remove selected image.
+  function handleRemoveImage() {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = "";
+    }
+
+    setImageFile(null);
+    setImagePreview("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  // Upload image to ImgBB.
+  async function uploadImage(): Promise<string> {
+    if (!imageFile) {
+      throw new Error("Please select a book image.");
+    }
+
+    if (!IMGBB_API_KEY) {
+      throw new Error(
+        "ImgBB API key is missing. Configure NEXT_PUBLIC_IMGBB_API_KEY."
+      );
+    }
+
+    setUploadingImage(true);
+
     try {
-      setLoading(true);
-      setError("");
+      const formData = new FormData();
+      formData.append("image", imageFile);
 
-      const response = await fetch(`${API_URL}/books`, {
-        cache: "no-store",
+      const response = await fetch(
+        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success || !result.data?.url) {
+        throw new Error(
+          result.error?.message || "Image upload failed."
+        );
+      }
+
+      return result.data.url as string;
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  // Submit book information.
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+
+    if (!user) {
+      toast.error("Please login before adding a book.");
+      return;
+    }
+
+    if (
+      !title.trim() ||
+      !author.trim() ||
+      !category ||
+      !description.trim()
+    ) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (!imageFile) {
+      toast.error("Please upload a book image.");
+      return;
+    }
+
+    const copies = Number(totalCopies);
+
+    if (!Number.isInteger(copies) || copies < 1) {
+      toast.error("Total copies must be at least 1.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      toast.loading("Uploading book image...", {
+        id: "add-book",
       });
 
-      if (!response.ok) {
-        throw new Error("Unable to load books.");
-      }
+      // Step 1: Upload image.
+      const uploadedImageUrl = await uploadImage();
 
-      const result: BooksResponse = await response.json();
-      setBooks(extractBooks(result));
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong."
+      toast.loading("Saving book information...", {
+        id: "add-book",
+      });
+
+      // Step 2: Prepare book data.
+      const payload = {
+        title: title.trim(),
+        author: author.trim(),
+        category,
+        description: description.trim(),
+        image: uploadedImageUrl,
+        totalCopies: copies,
+        availableCopies: copies,
+        addedBy: user.email || "",
+      };
+
+      // Step 3: Save book in MongoDB through backend API.
+      const result = await apiRequest<AddBookResponse>(
+        "/books",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      toast.success(
+        result?.message || "Book added successfully!",
+        {
+          id: "add-book",
+        }
+      );
+
+      router.push("/all-books");
+      router.refresh();
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to add book.",
+        {
+          id: "add-book",
+        }
       );
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
-
-  // Dynamic categories.
-  const categories = useMemo(() => {
-    const bookCategories = books
-      .map((book) => book.category)
-      .filter(Boolean);
-
-    return [
-      "All",
-      ...Array.from(
-        new Set([
-          ...bookCategories,
-          ...(category !== "All" ? [category] : []),
-        ])
-      ).sort(),
-    ];
-  }, [books, category]);
-
-  // Search, filter and sort.
-  const filteredBooks = useMemo(() => {
-    const searchText = search.trim().toLowerCase();
-
-    const result = books.filter((book) => {
-      const matchesSearch =
-        book.title?.toLowerCase().includes(searchText) ||
-        book.author?.toLowerCase().includes(searchText);
-
-      const matchesCategory =
-        category === "All" || book.category === category;
-
-      const matchesAvailability =
-        availability === "All" ||
-        (availability === "Available"
-          ? book.availableCopies > 0
-          : book.availableCopies <= 0);
-
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesAvailability
-      );
-    });
-
-    return [...result].sort((a, b) => {
-      switch (sort) {
-        case "oldest":
-          return (
-            new Date(a.createdAt || 0).getTime() -
-            new Date(b.createdAt || 0).getTime()
-          );
-
-        case "az":
-          return a.title.localeCompare(b.title);
-
-        case "za":
-          return b.title.localeCompare(a.title);
-
-        case "newest":
-        default:
-          return (
-            new Date(b.createdAt || 0).getTime() -
-            new Date(a.createdAt || 0).getTime()
-          );
-      }
-    });
-  }, [books, search, category, availability, sort]);
-
-  // Update category in URL.
-  function handleCategoryChange(value: string) {
-    if (value === "All") {
-      router.push("/all-books");
-    } else {
-      router.push(
-        `/all-books?category=${encodeURIComponent(value)}`
-      );
-    }
-  }
-
-  // Clear all filters.
-  function clearFilters() {
-    setSearch("");
-    setAvailability("All");
-    setSort("newest");
-    router.push("/all-books");
-  }
-
-  const hasActiveFilters =
-    search !== "" ||
-    category !== "All" ||
-    availability !== "All" ||
-    sort !== "newest";
 
   const inputClass =
-    "w-full rounded-xl border border-[#e5e7df] bg-[#fcfbf8] px-4 py-3 text-sm text-[#173f35] outline-none transition placeholder:text-[#8b9b91] focus:border-[#173f35] focus:ring-2 focus:ring-[#173f35]/10 dark:border-[#34483d] dark:bg-[#15251e] dark:text-[#e8eee8] dark:placeholder:text-[#91a197] dark:focus:border-[#d6b779] dark:focus:ring-[#d6b779]/10";
+    "w-full rounded-xl border border-[#e5e7df] bg-[#fcfbf8] px-4 py-3 text-sm text-[#173f35] outline-none transition placeholder:text-[#8b9b91] focus:border-[#173f35] focus:ring-2 focus:ring-[#173f35]/10 dark:border-[#34483d] dark:bg-[#15251e] dark:text-[#e8eee8] dark:placeholder:text-[#91a197]";
 
   const labelClass =
-    "mb-2 block text-xs font-bold uppercase tracking-wider text-[#718078] dark:text-[#a5b3a9]";
+    "mb-2 block text-sm font-semibold text-[#173f35] dark:text-[#e8eee8]";
 
-  const primaryButton =
-    "inline-flex items-center justify-center gap-2 rounded-full bg-[#173f35] px-6 py-3 text-sm font-semibold !text-white transition hover:-translate-y-0.5 hover:bg-[#245747] dark:bg-[#d6b779] dark:!text-[#173f35] dark:hover:bg-[#f0d9a1]";
+  if (isPending) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f8f5ed] dark:bg-[#111d19]">
+        <Loader2
+          className="animate-spin text-[#173f35] dark:text-[#d6b779]"
+          size={38}
+        />
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f8f5ed] px-5 dark:bg-[#111d19]">
+        <div className="max-w-md rounded-3xl border border-[#e7e2d7] bg-white p-9 text-center dark:border-[#34483d] dark:bg-[#1b2b24]">
+          <BookOpen
+            className="mx-auto mb-4 text-[#b28a50]"
+            size={45}
+          />
+
+          <h1 className="font-serif text-2xl font-bold text-[#173f35] dark:text-[#e8eee8]">
+            Login Required
+          </h1>
+
+          <p className="mt-3 text-sm text-[#718078] dark:text-[#a5b3a9]">
+            Please login to add a new book to the library.
+          </p>
+
+          <Link
+            href="/login"
+            className="mt-6 inline-flex rounded-full bg-[#173f35] px-7 py-3 text-sm font-semibold text-white dark:bg-[#d6b779] dark:text-[#173f35]"
+          >
+            Go to Login
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-[#f8f5ed] px-5 py-14 text-[#173f35] transition-colors duration-300 dark:bg-[#111d19] dark:text-[#e8eee8] md:px-10">
-      <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen bg-[#f8f5ed] px-5 py-12 text-[#173f35] transition-colors dark:bg-[#111d19] dark:text-[#e8eee8] md:px-10">
+      <div className="mx-auto max-w-4xl">
 
-        {/* Header */}
-        <section className="mb-12 text-center">
+        <Link
+          href="/all-books"
+          className="mb-7 inline-flex items-center gap-2 text-sm font-semibold text-[#718078] transition hover:text-[#173f35] dark:text-[#a5b3a9] dark:hover:text-[#f0d9a1]"
+        >
+          <ArrowLeft size={17} />
+          Back to All Books
+        </Link>
+
+        <div className="mb-9 text-center">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.3em] text-[#b28a50] dark:text-[#d6b779]">
-            Explore Our Collection
+            Expand Our Collection
           </p>
 
           <h1 className="font-serif text-4xl font-bold md:text-5xl">
-            Discover Your Next Story
+            Add a New Book
           </h1>
 
-          <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-[#718078] dark:text-[#a5b3a9]">
-            Explore our growing library of stories, knowledge
-            and inspiration. Find a book that speaks to you.
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#718078] dark:text-[#a5b3a9]">
+            Share a new story with our readers by adding a book
+            to the BookNook library.
           </p>
+        </div>
 
-          <div className="mt-7 flex justify-center">
-            <Link href="/add-book" className={primaryButton}>
-              + Add a Book
-            </Link>
-          </div>
-        </section>
-
-        {/* Filters */}
-        <section className="mb-9 rounded-2xl border border-[#e7e2d7] bg-white p-5 shadow-sm transition-colors duration-300 dark:border-[#34483d] dark:bg-[#1b2b24] md:p-7">
-          <div className="mb-5 flex items-center gap-2">
-            <SlidersHorizontal
-              size={19}
-              className="text-[#b28a50] dark:text-[#d6b779]"
-            />
-
-            <h2 className="font-serif text-xl font-bold">
-              Find Your Perfect Book
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-3xl border border-[#e7e2d7] bg-white p-6 shadow-sm dark:border-[#34483d] dark:bg-[#1b2b24] md:p-10"
+        >
+          <div className="mb-8">
+            <h2 className="font-serif text-2xl font-bold">
+              Book Information
             </h2>
+
+            <p className="mt-2 text-sm text-[#718078] dark:text-[#a5b3a9]">
+              Enter the details of the book you want to add.
+            </p>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-5">
-            <Search
-              size={19}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8b9b91] dark:text-[#91a197]"
-            />
+          <div className="grid gap-6 md:grid-cols-2">
 
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by book title or author..."
-              className={`${inputClass} py-3.5 pl-12 pr-4`}
-            />
-          </div>
-
-          {/* Filter Controls */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-
-            {/* Category */}
             <div>
               <label className={labelClass}>
-                Category
+                Book Title *
+              </label>
+
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter book title"
+                maxLength={150}
+                required
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                Author Name *
+              </label>
+
+              <input
+                type="text"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                placeholder="Enter author name"
+                maxLength={100}
+                required
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                Category *
               </label>
 
               <select
                 value={category}
-                onChange={(e) =>
-                  handleCategoryChange(e.target.value)
-                }
+                onChange={(e) => setCategory(e.target.value)}
+                required
                 className={inputClass}
               >
+                <option value="">Select a category</option>
+
                 {categories.map((item) => (
                   <option key={item} value={item}>
-                    {item === "All" ? "All Categories" : item}
+                    {item}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Availability */}
             <div>
               <label className={labelClass}>
-                Availability
+                Total Copies *
               </label>
 
-              <select
-                value={availability}
-                onChange={(e) =>
-                  setAvailability(
-                    e.target.value as AvailabilityFilter
-                  )
-                }
+              <input
+                type="number"
+                value={totalCopies}
+                onChange={(e) => setTotalCopies(e.target.value)}
+                min={1}
+                step={1}
+                required
                 className={inputClass}
-              >
-                <option value="All">All Books</option>
-                <option value="Available">Available Books</option>
-                <option value="Unavailable">Not Available</option>
-              </select>
+              />
             </div>
 
-            {/* Sorting */}
             <div>
               <label className={labelClass}>
-                Sort By
+                Added By
               </label>
 
-              <select
-                value={sort}
-                onChange={(e) =>
-                  setSort(e.target.value as SortOption)
-                }
-                className={inputClass}
-              >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="az">Title: A to Z</option>
-                <option value="za">Title: Z to A</option>
-              </select>
+              <input
+                type="text"
+                value={user.name || ""}
+                readOnly
+                className={`${inputClass} cursor-not-allowed opacity-75`}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                User Email
+              </label>
+
+              <input
+                type="email"
+                value={user.email || ""}
+                readOnly
+                className={`${inputClass} cursor-not-allowed opacity-75`}
+              />
             </div>
           </div>
 
-          {hasActiveFilters && (
-            <div className="mt-5 flex justify-end">
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-2 text-sm font-semibold text-[#b46c4b] transition hover:text-[#173f35] dark:text-[#e2a17e] dark:hover:text-[#f0d9a1]"
-              >
-                <X size={16} />
-                Clear All Filters
-              </button>
-            </div>
-          )}
-        </section>
+          <div className="mt-6">
+            <label className={labelClass}>
+              Short Description *
+            </label>
 
-        {/* Collection Header */}
-        <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="font-serif text-2xl font-bold">
-              Library Collection
-            </h2>
-
-            <p className="mt-1 text-sm text-[#718078] dark:text-[#a5b3a9]">
-              Showing {filteredBooks.length} of {books.length} books
-            </p>
-          </div>
-
-          <button
-            onClick={fetchBooks}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-full border border-[#d9dfd7] bg-white px-4 py-2.5 text-sm font-semibold text-[#173f35] transition hover:border-[#173f35] hover:bg-[#f3f6f1] disabled:opacity-50 dark:border-[#405448] dark:bg-[#1b2b24] dark:text-[#e8eee8] dark:hover:border-[#d6b779] dark:hover:bg-[#243a32]"
-          >
-            <RefreshCw
-              size={15}
-              className={loading ? "animate-spin" : ""}
-            />
-            Refresh
-          </button>
-        </div>
-
-        {/* Loading / Error / Empty / Books */}
-        {loading ? (
-          <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
-            <Loader2
-              size={35}
-              className="animate-spin text-[#173f35] dark:text-[#d6b779]"
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Write a short description about the book..."
+              rows={5}
+              maxLength={3000}
+              required
+              className={`${inputClass} resize-y`}
             />
 
-            <p className="text-sm text-[#718078] dark:text-[#a5b3a9]">
-              Loading your library...
+            <p className="mt-2 text-right text-xs text-[#8b9b91] dark:text-[#91a197]">
+              {description.length}/3000
             </p>
           </div>
-        ) : error ? (
-          <div className="rounded-3xl border border-red-100 bg-white p-12 text-center dark:border-red-900/50 dark:bg-[#1b2b24]">
-            <p className="text-red-600 dark:text-red-400">
-              {error}
-            </p>
 
-            <button
-              onClick={fetchBooks}
-              className={`mt-5 ${primaryButton}`}
-            >
-              Try Again
-            </button>
-          </div>
-        ) : filteredBooks.length === 0 ? (
-          <div className="rounded-3xl border border-[#e7e2d7] bg-white px-6 py-16 text-center dark:border-[#34483d] dark:bg-[#1b2b24]">
-            <BookOpen
-              size={45}
-              className="mx-auto mb-5 text-[#b28a50] dark:text-[#d6b779]"
-            />
+          <div className="mt-6">
+            <label className={labelClass}>
+              Book Cover Image *
+            </label>
 
-            <h3 className="font-serif text-2xl font-bold">
-              No Books Found
-            </h3>
+            <label className="flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#d9dfd7] bg-[#fcfbf8] p-6 text-center transition hover:border-[#b28a50] dark:border-[#405448] dark:bg-[#15251e] dark:hover:border-[#d6b779]">
+              {imagePreview ? (
+                <div className="relative">
+                  <Image
+                    src={imagePreview}
+                    alt="Book cover preview"
+                    width={180}
+                    height={220}
+                    unoptimized
+                    className="h-52 w-40 rounded-xl object-cover shadow-md"
+                  />
 
-            <p className="mt-3 text-sm text-[#718078] dark:text-[#a5b3a9]">
-              Try changing your search or filters to find books.
-            </p>
-
-            <button
-              onClick={clearFilters}
-              className={`mt-6 ${primaryButton}`}
-            >
-              Clear All Filters
-            </button>
-          </div>
-        ) : (
-          <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredBooks.map((book) => (
-              <article
-                key={book._id}
-                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#e7e2d7] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-[#34483d] dark:bg-[#1b2b24]"
-              >
-                <div className="relative h-[280px] shrink-0 overflow-hidden bg-[#eeeae0] dark:bg-[#243a32]">
-                  {book.image ? (
-                    <img
-                      src={book.image}
-                      alt={book.title}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <BookOpen
-                        size={55}
-                        className="text-[#b28a50] dark:text-[#d6b779]"
-                      />
-                    </div>
-                  )}
-
-                  <span className="absolute left-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-[#173f35] dark:bg-[#15251e]/95 dark:text-[#f0d9a1]">
-                    {book.category}
-                  </span>
-
-                  <span
-                    className={`absolute bottom-4 right-4 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                      book.availableCopies > 0
-                        ? "bg-[#e5f1e8] text-[#286442] dark:bg-[#1e4533] dark:text-[#9de0b4]"
-                        : "bg-red-100 text-red-600 dark:bg-red-950/70 dark:text-red-300"
-                    }`}
-                  >
-                    {book.availableCopies > 0
-                      ? `${book.availableCopies} Available`
-                      : "Not Available"}
+                  <span className="mt-3 block text-xs font-semibold text-[#286442] dark:text-[#9de0b4]">
+                    Image selected
                   </span>
                 </div>
+              ) : (
+                <>
+                  <ImagePlus
+                    size={40}
+                    className="mb-3 text-[#b28a50] dark:text-[#d6b779]"
+                  />
 
-                <div className="flex flex-1 flex-col p-5">
-                  <h3 className="line-clamp-1 font-serif text-xl font-bold">
-                    {book.title}
-                  </h3>
+                  <span className="text-sm font-semibold">
+                    Click to upload book cover
+                  </span>
 
-                  <p className="mt-2 text-sm text-[#718078] dark:text-[#a5b3a9]">
-                    By {book.author}
-                  </p>
+                  <span className="mt-2 text-xs text-[#8b9b91] dark:text-[#91a197]">
+                    JPG, PNG, WEBP — Maximum 5 MB
+                  </span>
+                </>
+              )}
 
-                  <div className="my-5 h-px bg-[#eeeae0] dark:bg-[#34483d]" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
 
-                  <div className="mb-5 flex justify-between text-xs text-[#718078] dark:text-[#a5b3a9]">
-                    <span>Total Copies</span>
+            {imageFile && (
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-[#f3f6f1] px-4 py-3 text-xs dark:bg-[#243a32]">
+                <span className="truncate text-[#173f35] dark:text-[#e8eee8]">
+                  {imageFile.name}
+                </span>
 
-                    <span className="font-semibold text-[#173f35] dark:text-[#e8eee8]">
-                      {book.totalCopies}
-                    </span>
-                  </div>
-
-                  <Link
-                    href={`/books/${book._id}`}
-                    className="mt-auto flex items-center justify-between rounded-xl bg-[#173f35] px-5 py-3 text-sm font-semibold !text-white transition hover:bg-[#245747] dark:bg-[#d6b779] dark:!text-[#173f35] dark:hover:bg-[#f0d9a1]"
-                  >
-                    View Details
-                    <ArrowRight size={17} />
-                  </Link>
-                </div>
-              </article>
-            ))}
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="ml-3 text-red-500 hover:text-red-700"
+                  aria-label="Remove image"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+            )}
           </div>
-        )}
 
-        {!loading && !error && books.length > 0 && (
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-3 text-xs text-[#8b9b91] dark:text-[#91a197]">
-            <ArrowUpDown size={15} />
-            Search, filter and sort books to find your next read.
+          <div className="mt-9 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Link
+              href="/all-books"
+              className="rounded-full border border-[#d9dfd7] px-7 py-3 text-center text-sm font-semibold text-[#718078] transition hover:border-[#173f35] dark:border-[#405448] dark:text-[#a5b3a9]"
+            >
+              Cancel
+            </Link>
+
+            <button
+              type="submit"
+              disabled={submitting || uploadingImage}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#173f35] px-8 py-3 text-sm font-semibold text-white transition hover:bg-[#245747] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#d6b779] dark:text-[#173f35] dark:hover:bg-[#f0d9a1]"
+            >
+              {submitting || uploadingImage ? (
+                <>
+                  <Loader2 size={17} className="animate-spin" />
+                  {uploadingImage
+                    ? "Uploading Image..."
+                    : "Adding Book..."}
+                </>
+              ) : (
+                <>
+                  <Upload size={17} />
+                  Add Book
+                </>
+              )}
+            </button>
           </div>
-        )}
+        </form>
       </div>
     </main>
-  );
-}
-
-export default function AllBooksPage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="flex min-h-screen items-center justify-center bg-[#f8f5ed] dark:bg-[#111d19]">
-          <Loader2
-            size={35}
-            className="animate-spin text-[#173f35] dark:text-[#d6b779]"
-          />
-        </main>
-      }
-    >
-      <AllBooksContent />
-    </Suspense>
   );
 }

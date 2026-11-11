@@ -35,7 +35,7 @@ export default function NewArrivals() {
   useEffect(() => {
     const controller = new AbortController();
 
-    fetch(`${API_ENDPOINTS.books}?limit=8`, {
+    fetch(`${API_ENDPOINTS.books}?limit=6`, {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -53,7 +53,7 @@ export default function NewArrivals() {
           ? payload
           : payload.data ?? payload.books ?? [];
 
-        setBooks(result.slice(0, 8));
+        setBooks(result.slice(0, 6));
         setError("");
       })
       .catch((err: unknown) => {
@@ -154,7 +154,7 @@ export default function NewArrivals() {
         {loading && (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
 
-            {Array.from({ length: 8 }).map((_, index) => (
+            {Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={index}
                 className="animate-pulse overflow-hidden rounded-[22px] border border-border bg-card"
